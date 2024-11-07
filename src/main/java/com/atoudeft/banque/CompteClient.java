@@ -30,4 +30,32 @@ public class CompteClient implements Serializable {
     public boolean ajouter(CompteBancaire compte) {
         return this.comptes.add(compte);
     }
+
+    /**
+     * Renvoie une liste de tous les comptes bancaires associés au compte-client.
+     * Renvoie une copie pour préserver l'encalpsulation.
+     *
+     * @return Une liste qu'on ne peut pas modifier des comptes bancaires du client
+     */
+    public List<CompteBancaire> getComptes() {
+        return new ArrayList<>(comptes);
+    }
+
+    /**
+     * Retourne le nip du compte client.
+     *
+     * @return Le nip du compte client.
+     */
+    public String getNip() {
+        return nip;
+    }
+
+    /**
+     * Définit le nip du compte client.
+     *
+     * @param nip Le nouveau nip à définir pour le compte client.
+     */
+    public void setNip(String nip) {
+        this.nip = nip;
+    }
 }

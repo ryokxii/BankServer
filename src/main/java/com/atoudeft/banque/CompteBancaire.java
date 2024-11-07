@@ -47,4 +47,15 @@ public abstract class CompteBancaire implements Serializable {
     public abstract boolean debiter(double montant);
     public abstract boolean payerFacture(String numeroFacture, double montant, String description);
     public abstract boolean transferer(double montant, String numeroCompteDestinataire);
+
+    /**
+     * Définit le solde du compte
+     *
+     * @param solde Le nouveau solde à attribuer à cet objet
+     */
+    public void setSolde(double solde) {
+        this.solde = solde;
+    }
+
 }
+
