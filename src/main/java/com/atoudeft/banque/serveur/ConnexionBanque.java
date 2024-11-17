@@ -1,5 +1,6 @@
 package com.atoudeft.banque.serveur;
 
+import com.atoudeft.banque.Banque;
 import com.atoudeft.banque.CompteBancaire;
 import com.atoudeft.commun.net.Connexion;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -29,8 +30,11 @@ public class ConnexionBanque extends Connexion {
      * @return true la durée d'inactivité est supérieure à delai
      */
     public boolean estInactifDepuis(long delai) {
-        //À définir :
-        throw new NotImplementedException();//ligne à supprimer
+        //À revoir :
+        if ((System.currentTimeMillis() - this.tempsDerniereOperation) >= delai) {
+            return true;
+        }
+        return false;
     }
 
     /**
