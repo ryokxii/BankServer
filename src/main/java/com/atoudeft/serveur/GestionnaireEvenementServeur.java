@@ -109,6 +109,29 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
                     cnx.envoyer("CONNECT OK ");
                     break;
 
+                case "SELECT":
+                    if(cnx.getNumeroCompteClient() == null){
+                        cnx.envoyer("SELECT NO");
+                        break;
+                    }
+
+                    argument = evenement.getArgument().trim();
+                    numCompteClient =null;
+                    banque = serveurBanque.getBanque();
+
+                    if ("cheque".equalsIgnoreCase(argument)){
+                        numCompteClient = banque.getNumeroCompteParDefaut(cnx.getNumeroCompteClient());
+                    } else if ("epargne".equalsIgnoreCase(argument)){
+                        numCompteClient = banque.getNumeroCompteParDefaut(cnx.getNumeroCompteClient());
+                    }
+                    if (numCompteClient != null) {
+                        cnx.setNumeroCompteActuel(numCompteClient);
+                        cnx.envoyer("SELECT OK");
+                    } else {
+                        cnx.envoyer("SELECT NO");
+                    }
+                    break;
+
                 /******************* TRAITEMENT PAR DÉFAUT *******************/
                 default: //Renvoyer le texte recu convertit en majuscules :
                     msg = (evenement.getType() + " " + evenement.getArgument()).toUpperCase();
