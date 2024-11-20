@@ -1,0 +1,202 @@
+package com.atoudeft.banque;
+
+import java.io.Serializable;
+
+public enum TypeOperation implements Serializable {
+    DEPOT,
+    RETRAIT,
+    FACTURE,
+    TRANSFER;
+}
+package com.atoudeft.banque;
+
+import java.io.Serializable;
+import java.util.Date;
+
+public abstract class Operation implements Serializable {
+    private TypeOperation type;
+    private Date date;
+
+    public Operation(TypeOperation type) {
+        this.type = type;
+        this.date = new Date();  // Date actuelle lors de la création de l'opération
+    }
+
+    public TypeOperation getType() {
+        return this.type;
+    }
+
+    public Date getDate() {
+        return this.date;
+    }
+
+    @Override
+    public abstract String toString();
+}
+package com.atoudeft.banque;
+
+public class OperationDepot extends Operation {
+    private double montant;
+
+    public OperationDepot(double montant) {
+        super(TypeOperation.DEPOT);
+        this.montant = montant;
+    }
+
+    @Override
+    public String toString() {
+        return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $";
+    }
+}
+
+package com.atoudeft.banque;
+
+public class OperationRetrait extends Operation {
+    private double montant;
+
+    public OperationRetrait(double montant) {
+        super(TypeOperation.RETRAIT);
+        this.montant = montant;
+    }
+
+    @Override
+    public String toString() {
+        return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $";
+    }
+}
+
+package com.atoudeft.banque;
+
+public class OperationFacture extends Operation {
+    private double montant;
+    private int numeroFacture;
+    private String description;
+
+    public OperationFacture(double montant, int numeroFacture, String description) {
+        super(TypeOperation.FACTURE);
+        this.montant = montant;
+        this.numeroFacture = numeroFacture;
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $\t" + this.numeroFacture + "\n" + this.description;
+    }
+}
+
+package com.atoudeft.banque;
+
+public class OperationTransfer extends Operation {
+    private double montant;
+    private String numeroCompteDestinataire;
+
+    public OperationTransfer(double montant, String numeroCompteDestinataire) {
+        super(TypeOperation.TRANSFER);
+        this.montant = montant;
+        this.numeroCompteDestinataire = numeroCompteDestinataire;
+    }
+
+    @Override
+    public String toString() {
+        return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $\t" + this.numeroCompteDestinataire;
+    }
+}
+package com.atoudeft.banque.serveur;
+
+import com.atoudeft.banque.*;
+
+public class GestionnaireEvenementServeur {
+
+    private Banque banque;
+
+    public GestionnaireEvenementServeur(Banque banque) {
+        this.banque = banque;
+    }
+
+    public void traiter(Evenement evenement) {
+        String typeEvenement = evenement.getType();
+        String argument = evenement.getArgument();
+
+        switch (typeEvenement) {
+            case "DEPOT":
+                // Traitement du dépôt
+                double montantDepot = Double.parseDouble(argument);
+                if (compte.selectionne().crediter(montantDepot)) {
+                    // Répondre avec OK si l'opération réussie
+                    cnx.envoyer("DEPOT OK");
+                } else {
+                    // Répondre avec NO si l'opération échoue
+                    cnx.envoyer("DEPOT NO");
+                }
+                break;
+
+            case "RETRAIT":
+                // Traitement du retrait
+                double montantRetrait = Double.parseDouble(argument);
+                if (compte.selectionne().debiter(montantRetrait)) {
+                    // Répondre avec OK si l'opération réussie
+                    cnx.envoyer("RETRAIT OK");
+                } else {
+                    // Répondre avec NO si l'opération échoue
+                    cnx.envoyer("RETRAIT NO");
+                }
+                break;
+
+            case "FACTURE":
+                // Traitement du paiement de facture
+                String[] argsFacture = argument.split(" ");
+                double montantFacture = Double.parseDouble(argsFacture[0]);
+                int numeroFacture = Integer.parseInt(argsFacture[1]);
+                String descriptionFacture = argsFacture[2];
+                if (compte.selectionne().payerFacture(descriptionFacture, montantFacture, String.valueOf(numeroFacture))) {
+                    // Répondre avec OK si l'opération réussie
+                    cnx.envoyer("FACTURE OK");
+                } else {
+                    // Répondre avec NO si l'opération échoue
+                    cnx.envoyer("FACTURE NO");
+                }
+                break;
+
+            case "TRANSFER":
+                // Traitement du transfert
+                String[] argsTransfer = argument.split(" ");
+                double montantTransfer = Double.parseDouble(argsTransfer[0]);
+                String compteDestinataire = argsTransfer[1];
+                if (compte.selectionne().transferer(montantTransfer, compteDestinataire)) {
+                    // Répondre avec OK si l'opération réussie
+                    cnx.envoyer("TRANSFER OK");
+                } else {
+                    // Répondre avec NO si l'opération échoue
+                    cnx.envoyer("TRANSFER NO");
+                }
+                break;
+
+            default:
+                // Répondre avec NO pour une commande inconnue
+                cnx.envoyer("Commande inconnue");
+                break;
+        }
+    }
+}
+package com.atoudeft.banque;
+
+import java.util.LinkedList;
+
+public class Historique {
+    private LinkedList<Operation> operations;
+
+    public Historique() {
+        operations = new LinkedList<>();
+    }
+
+    public void push(Operation operation) {
+        operations.add(operation); // Ajoute l'opération à l'historique
+    }
+
+    public void afficherHistorique() {
+        for (Operation operation : operations) {
+            System.out.println(operation);
+        }
+    }
+}
