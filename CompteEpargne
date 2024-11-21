@@ -1,0 +1,51 @@
+package com.atoudeft.banque;
+
+public class CompteEpargne extends CompteBancaire {
+    private static final double FRAIS = 2.0; // Frais pour solde inférieur à 1000$
+    private static final double LIMITE_SOLDE = 1000.0; // Limite avant l'application des frais
+    private double tauxInteret;
+
+    public CompteEpargne(String numero) {
+        super(numero, TypeCompte.EPARGNE); // Définir le type comme EPARGNE
+        this.tauxInteret = 0.05; // Exemple : taux d'intérêt à 5%
+    }
+
+    @Override
+    public boolean crediter(double montant) {
+        if (montant > 0) {
+            setSolde(getSolde() + montant); // Crédite le montant au solde
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean debiter(double montant) {
+        if (montant > 0 && getSolde() >= montant) {
+            setSolde(getSolde() - montant); // Débite le montant du solde
+            // Applique des frais si le solde devient inférieur à 1000$
+            if (getSolde() < LIMITE_SOLDE) {
+                setSolde(getSolde() - FRAIS);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean payerFacture(String numeroFacture, double montant, String description) {
+        // Pour l'instant cette méthode retourne false
+        return false;
+    }
+
+    @Override
+    public boolean transferer(double montant, String numeroCompteDestinataire) {
+        // Pour l'instant, cette méthode retourne false
+        return false;
+    }
+
+    public void ajouterInterets() {
+        double interets = getSolde() * tauxInteret;
+        setSolde(getSolde() + interets); // Ajouter les intérêts au solde
+    }
+}
