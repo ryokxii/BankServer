@@ -3,8 +3,8 @@ package com.atoudeft.banque;
 import java.io.Serializable;
 
 public enum TypeCompte implements Serializable {
-    CHEQUE,
-    EPARGNE; // Type épargne ajouté
+    CHEQUE, // Type pour les comptes chèques
+    EPARGNE; // Type pour les comptes épargne
 }
 package com.atoudeft.banque;
 
@@ -18,7 +18,7 @@ public abstract class CompteBancaire implements Serializable {
     public CompteBancaire(String numero, TypeCompte type) {
         this.numero = numero;
         this.type = type;
-        this.solde = 0.0; // Solde initial
+        this.solde = 0.0; // Solde initial de 0 $
     }
 
     public String getNumero() {
@@ -37,6 +37,7 @@ public abstract class CompteBancaire implements Serializable {
         this.solde = solde;
     }
 
+    // Méthodes abstraites pour gérer les opérations bancaires
     public abstract boolean crediter(double montant);
     public abstract boolean debiter(double montant);
     public abstract boolean payerFacture(String numeroFacture, double montant, String description);
@@ -45,13 +46,14 @@ public abstract class CompteBancaire implements Serializable {
 package com.atoudeft.banque;
 
 public class CompteEpargne extends CompteBancaire {
-    private static final double FRAIS = 2.0; // Frais si solde inférieur à 1000$
-    private static final double LIMITE_SOLDE = 1000.0; // Limite avant l'application des frais
+    private static final double FRAIS = 2.0; // Frais si solde inférieur à 1000 $
+    private static final double LIMITE_SOLDE = 1000.0; // Limite pour appliquer des frais
     private double tauxInteret;
 
+    // Constructeur pour initialiser un compte épargne
     public CompteEpargne(String numero) {
-        super(numero, TypeCompte.EPARGNE);
-        this.tauxInteret = 0.05; // Taux d'intérêt à 5%
+        super(numero, TypeCompte.EPARGNE); // Type compte épargne
+        this.tauxInteret = 0.05; // Taux d'intérêt de 5% pour les comptes épargne
     }
 
     @Override
@@ -67,7 +69,7 @@ public class CompteEpargne extends CompteBancaire {
     public boolean debiter(double montant) {
         if (montant > 0 && getSolde() >= montant) {
             setSolde(getSolde() - montant);
-            // Applique des frais si le solde devient inférieur à 1000$
+            // Applique des frais si le solde devient inférieur à 1000 $
             if (getSolde() < LIMITE_SOLDE) {
                 setSolde(getSolde() - FRAIS);
             }
@@ -78,17 +80,120 @@ public class CompteEpargne extends CompteBancaire {
 
     @Override
     public boolean payerFacture(String numeroFacture, double montant, String description) {
-        return false;
+        return false; // Pas d'implémentation pour les factures dans le cadre des comptes épargne
     }
 
     @Override
     public boolean transferer(double montant, String numeroCompteDestinataire) {
-        return false;
+        return false; // Pas d'implémentation pour les transferts dans le cadre des comptes épargne
     }
 
-    // Méthode pour ajouter des intérêts sur le solde
+    // Méthode pour ajouter des intérêts sur le solde du compte
     public void ajouterInterets() {
         double interets = getSolde() * tauxInteret;
         setSolde(getSolde() + interets);
     }
 }
+package com.atoudeft.banque.serveur;
+
+import com.atoudeft.banque.*;
+
+public class GestionnaireEvenementServeur {
+
+    private Banque banque;
+    private CompteBancaire compteSelectionne;  // Variable pour stocker le compte sélectionné
+
+    public GestionnaireEvenementServeur(Banque banque) {
+        this.banque = banque;
+    }
+
+    public void selectionnerCompte(CompteBancaire compte) {
+        this.compteSelectionne = compte;  // Permet de sélectionner un compte
+    }
+
+    public void traiter(Evenement evenement) {
+        String typeEvenement = evenement.getType();
+        String argument = evenement.getArgument();
+
+        // Vérifier si un compte est sélectionné
+        if (compteSelectionne == null) {
+            cnx.envoyer("Aucun compte sélectionné.");
+            return;
+        }
+
+        switch (typeEvenement) {
+            case "DEPOT":
+                double montantDepot = Double.parseDouble(argument);
+                if (compteSelectionne.crediter(montantDepot)) {
+                    // Si c'est un compte épargne, on applique les intérêts
+                    if (compteSelectionne.getType() == TypeCompte.EPARGNE) {
+                        ((CompteEpargne) compteSelectionne).ajouterInterets();  // Ajouter les intérêts sur le dépôt
+                    }
+                    OperationDepot operationDepot = new OperationDepot(montantDepot);
+                    historique.push(operationDepot);
+                    cnx.envoyer("DEPOT OK");
+                } else {
+                    cnx.envoyer("DEPOT NO");
+                }
+                break;
+
+            case "RETRAIT":
+                double montantRetrait = Double.parseDouble(argument);
+                if (compteSelectionne.debiter(montantRetrait)) {
+                    // Si c'est un compte épargne, on applique des frais si nécessaire
+                    if (compteSelectionne.getType() == TypeCompte.EPARGNE) {
+                        if (compteSelectionne.getSolde() < 1000) {
+                            ((CompteEpargne) compteSelectionne).setSolde(compteSelectionne.getSolde() - 2);  // Appliquer des frais de 2 $
+                        }
+                    }
+                    OperationRetrait operationRetrait = new OperationRetrait(montantRetrait);
+                    historique.push(operationRetrait);
+                    cnx.envoyer("RETRAIT OK");
+                } else {
+                    cnx.envoyer("RETRAIT NO");
+                }
+                break;
+
+            case "FACTURE":
+                String[] argsFacture = argument.split(" ");
+                double montantFacture = Double.parseDouble(argsFacture[0]);
+                int numeroFacture = Integer.parseInt(argsFacture[1]);
+                String descriptionFacture = argsFacture[2];
+                if (compteSelectionne.payerFacture(descriptionFacture, montantFacture, String.valueOf(numeroFacture))) {
+                    OperationFacture operationFacture = new OperationFacture(montantFacture, numeroFacture, descriptionFacture);
+                    historique.push(operationFacture);
+                    cnx.envoyer("FACTURE OK");
+                } else {
+                    cnx.envoyer("FACTURE NO");
+                }
+                break;
+
+            case "TRANSFER":
+                String[] argsTransfer = argument.split(" ");
+                double montantTransfer = Double.parseDouble(argsTransfer[0]);
+                String compteDestinataire = argsTransfer[1];
+                if (compteSelectionne.transferer(montantTransfer, compteDestinataire)) {
+                    OperationTransfer operationTransfer = new OperationTransfer(montantTransfer, compteDestinataire);
+                    historique.push(operationTransfer);
+                    cnx.envoyer("TRANSFER OK");
+                } else {
+                    cnx.envoyer("TRANSFER NO");
+                }
+                break;
+
+            // Ajouter une gestion explicite pour les comptes EPARGNE
+            case "EPARGNE":
+                // Vérifier si le compte sélectionné est de type EPARGNE et appliquer des règles communes ou personnalisées
+                if (compteSelectionne.getType() == TypeCompte.EPARGNE) {
+                    // Action spécifique pour les comptes épargne, vous pouvez ajouter des règles ici
+                    cnx.envoyer("Compte EPARGNE sélectionné et géré.");
+                }
+                break;
+
+            default:
+                cnx.envoyer("Commande inconnue");
+                break;
+        }
+    }
+}
+
