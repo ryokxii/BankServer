@@ -1,10 +1,10 @@
 package com.atoudeft.banque;
 
 public class OperationTransfer extends Operation {
-    private double montant = 0;
+    private int montant = 0;
     private String numeroCompte;
 
-    public OperationTransfer(double montant, String numeroCompte) {
+    public OperationTransfer(int montant, String numeroCompte) {
         super.type = TypeOperation.TRANSFER;
         this.montant = montant;
         this.numeroCompte = numeroCompte;

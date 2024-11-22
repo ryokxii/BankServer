@@ -1,11 +1,11 @@
 package com.atoudeft.banque;
 
 public class OperationDepot extends Operation {
-    private double montant = 0;
+    private int montant = 0;
 
-    public OperationDepot(double montant2) {
+    public OperationDepot(int montant) {
         super.type = TypeOperation.DEPOT;
-        this.montant = montant2;
+        this.montant = montant;
     }
     
     @Override

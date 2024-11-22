@@ -23,6 +23,10 @@ import java.io.*;
  */
 public class Serveur implements Lecteur {
 
+    public Vector<Connexion> getConnectes() {
+        return connectes;
+    }
+
     //Liste des connectés au serveur :
     protected final Vector<Connexion> connectes = new Vector<>();
 

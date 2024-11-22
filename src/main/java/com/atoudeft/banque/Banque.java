@@ -22,12 +22,12 @@ public class Banque implements Serializable {
      * @return le compte-client s'il a été trouvé. Sinon, retourne null
      */
     public CompteClient getCompteClient(String numeroCompteClient) {
-        CompteClient cpt = new CompteClient(numeroCompteClient,"");
-        int index = this.comptes.indexOf(cpt);
-        if (index != -1)
-            return this.comptes.get(index);
-        else
-            return null;
+        for (CompteClient compte : this.comptes) {
+            if (compte.getNumero().equals(numeroCompteClient)) {
+                return compte;
+            }
+        }
+        return null;
     }
 
     /**
@@ -140,12 +140,34 @@ public class Banque implements Serializable {
      * @return numéro du compte-chèque du client ayant le numéro de compte-client
      */
     public String getNumeroCompteParDefaut(String numCompteClient) {
-        CompteClient client = getCompteClient(numCompteClient);
-        for (CompteBancaire compte : client.getComptes()) {
-            if (compte instanceof CompteCheque) {
-                return compte.getNumero();
+        numCompteClient = "";
+        for (CompteClient compteClient : comptes){
+            if (compteClient.getComptes().equals(numCompteClient)){
+                for(CompteBancaire compte : compteClient.getComptes()){
+                    if (compte instanceof CompteCheque){
+                        return compte.getNumero();
+                    }
+                }
+            }
+        }
+        return numCompteClient;
+    }
+
+
+    public String getNumeroCompteType(String numeroCompteClient, TypeCompte typeCompte) {
+        for (CompteClient client : comptes) {
+            if (client.getNumero().equals(numeroCompteClient)) {
+                for (CompteBancaire compteBancaire : client.getComptesBancaires()) {
+                    if (compteBancaire.getType() == typeCompte) {
+                        return compteBancaire.getNumero();
+                    }
+                }
             }
         }
         return null;
+    }
+
+    public List<CompteClient> getComptes() {
+        return comptes;
     }
 }

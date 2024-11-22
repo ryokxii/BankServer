@@ -2,6 +2,7 @@ package com.atoudeft.serveur;
 
 import com.atoudeft.banque.Banque;
 import com.atoudeft.banque.CompteClient;
+import com.atoudeft.banque.TypeCompte;
 import com.atoudeft.banque.serveur.ConnexionBanque;
 import com.atoudeft.banque.serveur.ServeurBanque;
 import com.atoudeft.commun.evenement.Evenement;
@@ -18,6 +19,7 @@ import com.atoudeft.commun.net.Connexion;
  */
 public class GestionnaireEvenementServeur implements GestionnaireEvenement {
     private Serveur serveur;
+    private Banque banque;
 
     /**
      * Construit un gestionnaire d'événements pour un serveur.
@@ -26,6 +28,7 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
      */
     public GestionnaireEvenementServeur(Serveur serveur) {
         this.serveur = serveur;
+        this.banque = banque;
     }
 
     /**
@@ -39,8 +42,10 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
         ServeurBanque serveurBanque = (ServeurBanque) serveur;
         Banque banque;
         ConnexionBanque cnx;
-        String msg, typeEvenement, argument, numCompteClient, nip;
+        String msg, numCompteClient, nip;
         String[] t;
+        String typeEvenement = evenement.getType();
+        String argument = evenement.getArgument();
 
         if (source instanceof Connexion) {
             cnx = (ConnexionBanque) source;
@@ -105,7 +110,6 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
 
                     cnx.setNumeroCompteClient(numCompteClient);
                     cnx.setNumeroCompteActuel(banque.getNumeroCompteParDefaut(numCompteClient));
-
                     cnx.envoyer("CONNECT OK ");
                     break;
 
@@ -114,16 +118,16 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
                         cnx.envoyer("SELECT NO");
                         break;
                     }
-
                     argument = evenement.getArgument().trim();
                     numCompteClient =null;
                     banque = serveurBanque.getBanque();
 
-                    if ("cheque".equalsIgnoreCase(argument)){
-                        numCompteClient = banque.getNumeroCompteParDefaut(cnx.getNumeroCompteClient());
-                    } else if ("epargne".equalsIgnoreCase(argument)){
-                        numCompteClient = banque.getNumeroCompteParDefaut(cnx.getNumeroCompteClient());
+                    if (TypeCompte.CHEQUE.name().equalsIgnoreCase(argument)) {
+                        numCompteClient = banque.getNumeroCompteType(cnx.getNumeroCompteClient(), TypeCompte.CHEQUE);
+                    } else if (TypeCompte.EPARGNE.name().equalsIgnoreCase(argument)) {
+                        numCompteClient = banque.getNumeroCompteType(cnx.getNumeroCompteClient(), TypeCompte.EPARGNE);
                     }
+
                     if (numCompteClient != null) {
                         cnx.setNumeroCompteActuel(numCompteClient);
                         cnx.envoyer("SELECT OK");

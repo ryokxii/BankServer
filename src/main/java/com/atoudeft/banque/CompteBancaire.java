@@ -33,18 +33,18 @@ public abstract class CompteBancaire implements Serializable {
     public CompteBancaire(String numero, TypeCompte type) {
         this.numero = numero;
         this.type = type;
-        this.solde = 0;
+        this.solde = 0.0;
         this.historique = new PileChainee();
     }
     public String getNumero() {
-        return numero;
+        return this.numero;
     }
     public TypeCompte getType() {
-        return type;
+        return this.type;
     }
 
     public double getSolde() {
-        return solde;
+        return this.solde;
     }
     
     public PileChainee getHistorique() {

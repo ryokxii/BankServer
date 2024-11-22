@@ -1,9 +1,9 @@
 package com.atoudeft.banque;
 
 public class OperationRetrait extends Operation {
-    private double montant = 0;
+    private int montant = 0;
 
-    public OperationRetrait(double montant) {
+    public OperationRetrait(int montant) {
         super.type = TypeOperation.RETRAIT;
         this.montant = montant;
     }

@@ -8,7 +8,7 @@ public class CompteCheque extends CompteBancaire{
      * @param type   type du compte
      */
     public CompteCheque(String numero, TypeCompte type) {
-        super(numero, type);
+        super(numero, TypeCompte.CHEQUE);
     }
 
     /**
@@ -22,7 +22,7 @@ public class CompteCheque extends CompteBancaire{
     public boolean crediter(double montant) {
         if (montant > 0){
             setSolde(getSolde() + montant);
-            super.sauvegarder(new OperationDepot(montant));
+            super.sauvegarder(new OperationDepot((int) montant));
             return true;
         }
         return false;
@@ -40,7 +40,7 @@ public class CompteCheque extends CompteBancaire{
     public boolean debiter(double montant) {
         if (montant > 0 && getSolde()>=montant){
             setSolde(getSolde() - montant);
-            super.sauvegarder(new OperationRetrait(montant));
+            super.sauvegarder(new OperationRetrait((int) montant));
             return true;
         }
         return false;
@@ -48,13 +48,13 @@ public class CompteCheque extends CompteBancaire{
 
     @Override
     public boolean payerFacture(String numeroFacture, double montant, String description) {
-        super.sauvegarder(new OperationFacture(montant, numeroFacture, description));
+        super.sauvegarder(new OperationFacture((int)montant, numeroFacture, description));
         return false;
     }
 
     @Override
     public boolean transferer(double montant, String numeroCompteDestinataire) {
-        super.sauvegarder(new OperationTransfer(montant, numeroCompteDestinataire));
+        super.sauvegarder(new OperationTransfer((int)montant, numeroCompteDestinataire));
         return false;
     }
 }
