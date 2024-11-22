@@ -2,17 +2,13 @@ package com.atoudeft.banque;
 
 import java.io.Serializable;
 
-import javafx.scene.Node;
-
 public class Noeud implements Serializable{
-	int data; 
-	Node prev; 
-	Node next; 
+	Object data; 
+	Noeud next; 
 
-	public Noeud(int data) 
+	public Noeud(Object data) 
 	{ 
 		this.data = data; 
-		this.prev = null; 
 		this.next = null; 
 	} 
 

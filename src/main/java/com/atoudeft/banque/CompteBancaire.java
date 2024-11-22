@@ -42,9 +42,19 @@ public abstract class CompteBancaire implements Serializable {
     public TypeCompte getType() {
         return type;
     }
+
     public double getSolde() {
         return solde;
     }
+    
+    public PileChainee getHistorique() {
+        return historique;
+    }
+    
+    public void setHistorique(PileChainee historique) {
+        this.historique = historique;
+    }
+
     public abstract boolean crediter(double montant);
     public abstract boolean debiter(double montant);
     public abstract boolean payerFacture(String numeroFacture, double montant, String description);
