@@ -69,5 +69,19 @@ public abstract class CompteBancaire implements Serializable {
         this.solde = solde;
     }
 
+    public void sauvegarder(Object object) {
+		Noeud newNode = new Noeud(object);
+
+		if (historique.tete == null)
+			historique.tete = newNode;
+
+		Noeud curr = historique.tete;
+		while (curr.next != null) {
+			curr = curr.next;
+		}
+
+		curr.next = newNode;
+	}
+
 }
 
