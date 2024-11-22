@@ -1,19 +1,63 @@
 package com.atoudeft.banque;
 
+import java.io.Serializable;
+
+public enum TypeCompte implements Serializable {
+    CHEQUE,
+    EPARGNE; // Type épargne ajouté
+}
+package com.atoudeft.banque;
+
+import java.io.Serializable;
+
+public abstract class CompteBancaire implements Serializable {
+    private String numero;
+    private TypeCompte type;
+    private double solde;
+
+    public CompteBancaire(String numero, TypeCompte type) {
+        this.numero = numero;
+        this.type = type;
+        this.solde = 0.0; // Solde initial
+    }
+
+    public String getNumero() {
+        return this.numero;
+    }
+
+    public TypeCompte getType() {
+        return this.type;
+    }
+
+    public double getSolde() {
+        return this.solde;
+    }
+
+    public void setSolde(double solde) {
+        this.solde = solde;
+    }
+
+    public abstract boolean crediter(double montant);
+    public abstract boolean debiter(double montant);
+    public abstract boolean payerFacture(String numeroFacture, double montant, String description);
+    public abstract boolean transferer(double montant, String numeroCompteDestinataire);
+}
+package com.atoudeft.banque;
+
 public class CompteEpargne extends CompteBancaire {
-    private static final double FRAIS = 2.0; // Frais pour solde inférieur à 1000$
+    private static final double FRAIS = 2.0; // Frais si solde inférieur à 1000$
     private static final double LIMITE_SOLDE = 1000.0; // Limite avant l'application des frais
     private double tauxInteret;
 
     public CompteEpargne(String numero) {
-        super(numero, TypeCompte.EPARGNE); // Définir le type comme EPARGNE
-        this.tauxInteret = 0.05; // Exemple : taux d'intérêt à 5%
+        super(numero, TypeCompte.EPARGNE);
+        this.tauxInteret = 0.05; // Taux d'intérêt à 5%
     }
 
     @Override
     public boolean crediter(double montant) {
         if (montant > 0) {
-            setSolde(getSolde() + montant); // Crédite le montant au solde
+            setSolde(getSolde() + montant);
             return true;
         }
         return false;
@@ -22,7 +66,7 @@ public class CompteEpargne extends CompteBancaire {
     @Override
     public boolean debiter(double montant) {
         if (montant > 0 && getSolde() >= montant) {
-            setSolde(getSolde() - montant); // Débite le montant du solde
+            setSolde(getSolde() - montant);
             // Applique des frais si le solde devient inférieur à 1000$
             if (getSolde() < LIMITE_SOLDE) {
                 setSolde(getSolde() - FRAIS);
@@ -34,18 +78,17 @@ public class CompteEpargne extends CompteBancaire {
 
     @Override
     public boolean payerFacture(String numeroFacture, double montant, String description) {
-        // Pour l'instant cette méthode retourne false
         return false;
     }
 
     @Override
     public boolean transferer(double montant, String numeroCompteDestinataire) {
-        // Pour l'instant, cette méthode retourne false
         return false;
     }
 
+    // Méthode pour ajouter des intérêts sur le solde
     public void ajouterInterets() {
         double interets = getSolde() * tauxInteret;
-        setSolde(getSolde() + interets); // Ajouter les intérêts au solde
+        setSolde(getSolde() + interets);
     }
 }
