@@ -42,9 +42,19 @@ public abstract class CompteBancaire implements Serializable {
     public TypeCompte getType() {
         return type;
     }
+
     public double getSolde() {
         return solde;
     }
+    
+    public PileChainee getHistorique() {
+        return historique;
+    }
+    
+    public void setHistorique(PileChainee historique) {
+        this.historique = historique;
+    }
+
     public abstract boolean crediter(double montant);
     public abstract boolean debiter(double montant);
     public abstract boolean payerFacture(String numeroFacture, double montant, String description);
@@ -58,6 +68,20 @@ public abstract class CompteBancaire implements Serializable {
     public void setSolde(double solde) {
         this.solde = solde;
     }
+
+    public void sauvegarder(Object object) {
+		Noeud newNode = new Noeud(object);
+
+		if (historique.tete == null)
+			historique.tete = newNode;
+
+		Noeud curr = historique.tete;
+		while (curr.next != null) {
+			curr = curr.next;
+		}
+
+		curr.next = newNode;
+	}
 
 }
 

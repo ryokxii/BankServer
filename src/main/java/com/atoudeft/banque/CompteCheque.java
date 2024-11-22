@@ -22,6 +22,7 @@ public class CompteCheque extends CompteBancaire{
     public boolean crediter(double montant) {
         if (montant > 0){
             setSolde(getSolde() + montant);
+            super.sauvegarder(new OperationDepot(montant));
             return true;
         }
         return false;
@@ -39,6 +40,7 @@ public class CompteCheque extends CompteBancaire{
     public boolean debiter(double montant) {
         if (montant > 0 && getSolde()>=montant){
             setSolde(getSolde() - montant);
+            super.sauvegarder(new OperationRetrait(montant));
             return true;
         }
         return false;
@@ -46,11 +48,13 @@ public class CompteCheque extends CompteBancaire{
 
     @Override
     public boolean payerFacture(String numeroFacture, double montant, String description) {
+        super.sauvegarder(new OperationFacture(montant, numeroFacture, description));
         return false;
     }
 
     @Override
     public boolean transferer(double montant, String numeroCompteDestinataire) {
+        super.sauvegarder(new OperationTransfer(montant, numeroCompteDestinataire));
         return false;
     }
 }
