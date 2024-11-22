@@ -48,7 +48,6 @@ public class OperationDepot extends Operation {
         return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $";
     }
 }
-
 package com.atoudeft.banque;
 
 public class OperationRetrait extends Operation {
@@ -64,7 +63,6 @@ public class OperationRetrait extends Operation {
         return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $";
     }
 }
-
 package com.atoudeft.banque;
 
 public class OperationFacture extends Operation {
@@ -84,7 +82,6 @@ public class OperationFacture extends Operation {
         return super.getDate() + "\t" + this.getType() + "\t" + this.montant + " $\t" + this.numeroFacture + "\n" + this.description;
     }
 }
-
 package com.atoudeft.banque;
 
 public class OperationTransfer extends Operation {
@@ -109,94 +106,79 @@ import com.atoudeft.banque.*;
 public class GestionnaireEvenementServeur {
 
     private Banque banque;
+    private CompteBancaire compteSelectionne;  // Variable pour stocker le compte sélectionné
 
     public GestionnaireEvenementServeur(Banque banque) {
         this.banque = banque;
+    }
+
+    public void selectionnerCompte(CompteBancaire compte) {
+        this.compteSelectionne = compte;  // Permet de sélectionner un compte
     }
 
     public void traiter(Evenement evenement) {
         String typeEvenement = evenement.getType();
         String argument = evenement.getArgument();
 
+        // Vérifier si un compte est sélectionné
+        if (compteSelectionne == null) {
+            cnx.envoyer("Aucun compte sélectionné.");
+            return;
+        }
+
         switch (typeEvenement) {
             case "DEPOT":
-                // Traitement du dépôt
                 double montantDepot = Double.parseDouble(argument);
-                if (compte.selectionne().crediter(montantDepot)) {
-                    // Répondre avec OK si l'opération réussie
+                if (compteSelectionne.crediter(montantDepot)) {
+                    OperationDepot operationDepot = new OperationDepot(montantDepot);
+                    historique.push(operationDepot);
                     cnx.envoyer("DEPOT OK");
                 } else {
-                    // Répondre avec NO si l'opération échoue
                     cnx.envoyer("DEPOT NO");
                 }
                 break;
 
             case "RETRAIT":
-                // Traitement du retrait
                 double montantRetrait = Double.parseDouble(argument);
-                if (compte.selectionne().debiter(montantRetrait)) {
-                    // Répondre avec OK si l'opération réussie
+                if (compteSelectionne.debiter(montantRetrait)) {
+                    OperationRetrait operationRetrait = new OperationRetrait(montantRetrait);
+                    historique.push(operationRetrait);
                     cnx.envoyer("RETRAIT OK");
                 } else {
-                    // Répondre avec NO si l'opération échoue
                     cnx.envoyer("RETRAIT NO");
                 }
                 break;
 
             case "FACTURE":
-                // Traitement du paiement de facture
                 String[] argsFacture = argument.split(" ");
                 double montantFacture = Double.parseDouble(argsFacture[0]);
                 int numeroFacture = Integer.parseInt(argsFacture[1]);
                 String descriptionFacture = argsFacture[2];
-                if (compte.selectionne().payerFacture(descriptionFacture, montantFacture, String.valueOf(numeroFacture))) {
-                    // Répondre avec OK si l'opération réussie
+                if (compteSelectionne.payerFacture(descriptionFacture, montantFacture, String.valueOf(numeroFacture))) {
+                    OperationFacture operationFacture = new OperationFacture(montantFacture, numeroFacture, descriptionFacture);
+                    historique.push(operationFacture);
                     cnx.envoyer("FACTURE OK");
                 } else {
-                    // Répondre avec NO si l'opération échoue
                     cnx.envoyer("FACTURE NO");
                 }
                 break;
 
             case "TRANSFER":
-                // Traitement du transfert
                 String[] argsTransfer = argument.split(" ");
                 double montantTransfer = Double.parseDouble(argsTransfer[0]);
                 String compteDestinataire = argsTransfer[1];
-                if (compte.selectionne().transferer(montantTransfer, compteDestinataire)) {
-                    // Répondre avec OK si l'opération réussie
+                if (compteSelectionne.transferer(montantTransfer, compteDestinataire)) {
+                    OperationTransfer operationTransfer = new OperationTransfer(montantTransfer, compteDestinataire);
+                    historique.push(operationTransfer);
                     cnx.envoyer("TRANSFER OK");
                 } else {
-                    // Répondre avec NO si l'opération échoue
                     cnx.envoyer("TRANSFER NO");
                 }
                 break;
 
             default:
-                // Répondre avec NO pour une commande inconnue
                 cnx.envoyer("Commande inconnue");
                 break;
-        }
-    }
-}
-package com.atoudeft.banque;
-
-import java.util.LinkedList;
-
-public class Historique {
-    private LinkedList<Operation> operations;
-
-    public Historique() {
-        operations = new LinkedList<>();
-    }
-
-    public void push(Operation operation) {
-        operations.add(operation); // Ajoute l'opération à l'historique
-    }
-
-    public void afficherHistorique() {
-        for (Operation operation : operations) {
-            System.out.println(operation);
         }
     }
 }
