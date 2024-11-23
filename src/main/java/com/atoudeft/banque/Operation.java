@@ -13,7 +13,7 @@ public abstract class Operation implements Serializable {
 
     public Operation(TypeOperation type) {
         this.type = type;
-        this.date = new Date();  // Date actuelle lors de la création de l'opération
+        this.date = new Date(System.currentTimeMillis());  // Date actuelle lors de la création de l'opération
     }
 
     public TypeOperation getType() {

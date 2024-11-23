@@ -13,8 +13,9 @@ public class CompteEpargne extends CompteBancaire {
 
     @Override
     public boolean crediter(double montant) {
-        if (montant > 0) {
+        if (montant >= 0) {
             setSolde(getSolde() + montant);
+            super.sauvegarder(new OperationDepot(montant));
             return true;
         }
         return false;
@@ -28,6 +29,7 @@ public class CompteEpargne extends CompteBancaire {
             if (getSolde() < LIMITE_SOLDE) {
                 setSolde(getSolde() - FRAIS);
             }
+            super.sauvegarder(new OperationRetrait(montant));
             return true;
         }
         return false;
@@ -35,11 +37,13 @@ public class CompteEpargne extends CompteBancaire {
 
     @Override
     public boolean payerFacture(String numeroFacture, double montant, String description) {
+        super.sauvegarder(new OperationFacture(montant, numeroFacture, description));
         return false; // Pas d'implémentation pour les factures dans le cadre des comptes épargne
     }
 
     @Override
     public boolean transferer(double montant, String numeroCompteDestinataire) {
+        super.sauvegarder(new OperationTransfer(montant, numeroCompteDestinataire));
         return false; // Pas d'implémentation pour les transferts dans le cadre des comptes épargne
     }
 

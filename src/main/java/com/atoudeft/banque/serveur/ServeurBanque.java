@@ -85,5 +85,14 @@ public class ServeurBanque extends Serveur {
      */
     public void supprimeInactifs() {
 
+        for (Connexion cnx:connectes) {
+            if (((ConnexionBanque) cnx).estInactifDepuis(DELAI_INACTIVITE)) {
+                cnx.envoyer("END");
+                cnx.close();
+            }
+        }
+        
+        // System.out.print(this.list());
+
     }
 }
