@@ -3,6 +3,7 @@ package com.atoudeft.banque;
 import java.io.Serializable;
 
 public abstract class CompteBancaire implements Serializable {
+
     private String numero;
     private TypeCompte type;
     private double solde;
@@ -82,6 +83,10 @@ public abstract class CompteBancaire implements Serializable {
 
 		curr.next = newNode;
 	}
+
+    public void setNumero(String numero) {
+        this.numero = numero;
+    }
 
 }
 

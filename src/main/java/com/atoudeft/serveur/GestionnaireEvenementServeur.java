@@ -1,13 +1,13 @@
 package com.atoudeft.serveur;
 
-import com.atoudeft.banque.Banque;
-import com.atoudeft.banque.CompteClient;
-import com.atoudeft.banque.TypeCompte;
+import com.atoudeft.banque.*;
 import com.atoudeft.banque.serveur.ConnexionBanque;
 import com.atoudeft.banque.serveur.ServeurBanque;
 import com.atoudeft.commun.evenement.Evenement;
 import com.atoudeft.commun.evenement.GestionnaireEvenement;
 import com.atoudeft.commun.net.Connexion;
+
+import java.util.Stack;
 
 /**
  * Cette classe représente un gestionnaire d'événement d'un serveur. Lorsqu'un serveur reçoit un texte d'un client,
@@ -20,6 +20,8 @@ import com.atoudeft.commun.net.Connexion;
 public class GestionnaireEvenementServeur implements GestionnaireEvenement {
     private Serveur serveur;
     private Banque banque;
+    private CompteBancaire compteSelectionne; // Variable pour stocker le compte sélectionné
+    private Stack<Operation> historique = new Stack<>(); // Historique des opérations
 
     /**
      * Construit un gestionnaire d'événements pour un serveur.
@@ -28,7 +30,16 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
      */
     public GestionnaireEvenementServeur(Serveur serveur) {
         this.serveur = serveur;
-        this.banque = banque;
+        this.banque = ((ServeurBanque) serveur).getBanque();
+    }
+
+    /**
+     * Permet de sélectionner un compte pour effectuer des opérations.
+     *
+     * @param compte Le compte bancaire à sélectionner.
+     */
+    public void selectionnerCompte(CompteBancaire compte) {
+        this.compteSelectionne = compte;
     }
 
     /**
@@ -40,7 +51,6 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
     public void traiter(Evenement evenement) {
         Object source = evenement.getSource();
         ServeurBanque serveurBanque = (ServeurBanque) serveur;
-        Banque banque;
         ConnexionBanque cnx;
         String msg, numCompteClient, nip;
         String[] t;
@@ -49,19 +59,21 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
 
         if (source instanceof Connexion) {
             cnx = (ConnexionBanque) source;
-            System.out.println("SERVEUR: Recu : " + evenement.getType() + " " + evenement.getArgument());
-            typeEvenement = evenement.getType();
+            System.out.println("SERVEUR: Reçu : " + typeEvenement + " " + argument);
             cnx.setTempsDerniereOperation(System.currentTimeMillis());
+
             switch (typeEvenement) {
                 /******************* COMMANDES GÉNÉRALES *******************/
-                case "EXIT": //Ferme la connexion avec le client qui a envoyé "EXIT":
+                case "EXIT":
                     cnx.envoyer("END");
                     serveurBanque.enlever(cnx);
                     cnx.close();
                     break;
-                case "LIST": //Envoie la liste des numéros de comptes-clients connectés :
+
+                case "LIST":
                     cnx.envoyer("LIST " + serveurBanque.list());
                     break;
+
                 /******************* COMMANDES DE GESTION DE COMPTES *******************/
                 case "NOUVEAU": //Crée un nouveau compte-client :
                     if (cnx.getNumeroCompteClient() != null) {
@@ -129,17 +141,94 @@ public class GestionnaireEvenementServeur implements GestionnaireEvenement {
                     }
 
                     if (numCompteClient != null) {
+                        // Mise à jour de la connexion
                         cnx.setNumeroCompteActuel(numCompteClient);
-                        cnx.envoyer("SELECT OK");
+
+                        // Récupération du compte correspondant
+                        CompteBancaire compte = banque.getCompte(numCompteClient);
+                        if (compte != null) {
+                            this.selectionnerCompte(compte); // Sélectionne le compte
+                            cnx.envoyer("SELECT OK"); // Confirme la sélection
+                        } else {
+                            cnx.envoyer("SELECT NO"); // Compte introuvable
+                        }
                     } else {
-                        cnx.envoyer("SELECT NO");
+                        cnx.envoyer("SELECT NO"); // Aucun compte associé trouvé
                     }
                     break;
 
-                /******************* TRAITEMENT PAR DÉFAUT *******************/
-                default: //Renvoyer le texte recu convertit en majuscules :
-                    msg = (evenement.getType() + " " + evenement.getArgument()).toUpperCase();
+                /******************* OPÉRATIONS SPÉCIFIQUES AUX COMPTES *******************/
+                case "DEPOT":
+                    if (compteSelectionne == null) {
+                        cnx.envoyer("Aucun compte sélectionné.");
+                        break;
+                    }
+                    double montantDepot = Double.parseDouble(argument);
+                    if (compteSelectionne.crediter(montantDepot)) {
+                        if (compteSelectionne instanceof CompteEpargne) {
+                            ((CompteEpargne) compteSelectionne).ajouterInterets();
+                        }
+                        historique.push(new OperationDepot((int)montantDepot));
+                        cnx.envoyer("DEPOT OK");
+                    } else {
+                        cnx.envoyer("DEPOT NO");
+                    }
+                    break;
+
+                case "RETRAIT":
+                    if (compteSelectionne == null) {
+                        cnx.envoyer("Aucun compte sélectionné.");
+                        break;
+                    }
+                    double montantRetrait = Double.parseDouble(argument);
+                    if (compteSelectionne.debiter(montantRetrait)) {
+                        if (compteSelectionne instanceof CompteEpargne && compteSelectionne.getSolde() < 1000) {
+                            ((CompteEpargne) compteSelectionne).setSolde(compteSelectionne.getSolde() - 2);
+                        }
+                        historique.push(new OperationRetrait((int)montantRetrait));
+                        cnx.envoyer("RETRAIT OK");
+                    } else {
+                        cnx.envoyer("RETRAIT NO");
+                    }
+                    break;
+
+                case "FACTURE":
+                    String[] argsFacture = argument.split(" ");
+                    double montantFacture = Double.parseDouble(argsFacture[0]);
+                    String numeroFacture = argsFacture[1];
+                    String descriptionFacture = argsFacture[2];
+                    if (compteSelectionne.payerFacture(descriptionFacture, montantFacture, String.valueOf(numeroFacture))) {
+                        OperationFacture operationFacture = new OperationFacture((int)montantFacture, numeroFacture, descriptionFacture);
+                        historique.push(operationFacture);
+                        cnx.envoyer("FACTURE OK");
+                    } else {
+                        cnx.envoyer("FACTURE NO");
+                    }
+                    break;
+
+                case "TRANSFER":
+                    String[] argsTransfer = argument.split(" ");
+                    double montantTransfer = Double.parseDouble(argsTransfer[0]);
+                    String compteDestinataire = argsTransfer[1];
+                    if (compteSelectionne.transferer(montantTransfer, compteDestinataire)) {
+                        OperationTransfer operationTransfer = new OperationTransfer((int) montantTransfer, compteDestinataire);
+                        historique.push(operationTransfer);
+                        cnx.envoyer("TRANSFER OK");
+                    } else {
+                        cnx.envoyer("TRANSFER NO");
+                    }
+                    break;
+
+                case "EPARGNE":
+                    if (compteSelectionne.getType() == TypeCompte.EPARGNE) {
+                        cnx.envoyer("Compte EPARGNE sélectionné et géré.");
+                    }
+                    break;
+
+                default:
+                    msg = (typeEvenement + " " + argument).toUpperCase();
                     cnx.envoyer(msg);
+                    break;
             }
         }
     }

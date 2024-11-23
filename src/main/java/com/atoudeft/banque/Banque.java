@@ -170,4 +170,14 @@ public class Banque implements Serializable {
     public List<CompteClient> getComptes() {
         return comptes;
     }
+    public CompteBancaire getCompte(String numeroCompte) {
+        for (CompteClient client : comptes) {
+            for (CompteBancaire compte : client.getComptes()) {
+                if (compte.getNumero().equals(numeroCompte)) {
+                    return compte; // Retourne le compte correspondant
+                }
+            }
+        }
+        return null; // Retourne null si aucun compte n'est trouvé
+    }
 }
